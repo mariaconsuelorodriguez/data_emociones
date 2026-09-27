@@ -246,7 +246,33 @@ En todos los casos, la arquitectura "C" expone dos salidas (clasificación + emb
 
 ---
 
-## 10. Próximos pasos (esperando tu confirmación)
+## 11. Resultados reales — EEG/SEED, piloto A/B/C completo (LOSO, 15 sujetos)
+
+Los tres modelos definidos en la sección 5 se entrenaron y evaluaron de extremo a extremo sobre los datos reales de SEED, con LOSO completo (15 folds, sujetos disjuntos, normalización ajustada solo en train — auditoría de leakage pasó en los 15 folds). Resultados reales, no simulados (`results/eeg/seed/{baseline,cnn_bilstm,transformer}/loso_summary.json`):
+
+| Modelo | Accuracy | Balanced Accuracy | F1 macro | Tiempo total (CPU) |
+|---|---|---|---|---|
+| A — CNN baseline | 43.0% ± 10.9% | 42.9% ± 11.0% | 34.9% ± 13.8% | ~19 min |
+| B — CNN + BiLSTM | 44.5% ± 11.8% | 44.5% ± 11.8% | 35.1% ± 16.4% | ~52 min |
+| C — Transformer | **54.3% ± 13.7%** | **54.0% ± 13.6%** | **47.8% ± 16.8%** | ~5 min |
+
+(Azar ≈ 33.3% en un problema de 3 clases.)
+
+**Comparación estadística** (`evaluation/compare_eeg_models.py`, resultado en `results/eeg/seed/model_comparison.json`), siguiendo la regla de la sección 8 de no aplicar ANOVA por defecto:
+
+- Shapiro-Wilk sobre la accuracy por sujeto de cada modelo: p > 0.05 en los tres → no se rechaza normalidad → se usa **ANOVA de un factor** para la comparación conjunta: F=3.50, **p=0.039** (diferencia estadísticamente significativa entre A, B y C al nivel 0.05).
+- Comparaciones pareadas (t de Student pareada, misma justificación de normalidad):
+  - A vs B: p=0.621 — **sin diferencia significativa** (el modelo "avanzado" no mejora de forma confiable sobre el baseline en este piloto).
+  - A vs C: p=0.0195 — **diferencia significativa**, Transformer supera al baseline.
+  - B vs C: p=0.079 — diferencia marginal (no significativa al 0.05, pero cercana), Transformer por encima de CNN+BiLSTM.
+
+**Interpretación (sin sobre-interpretar un único piloto):** en este dataset y con estas features (DE por banda ya extraídas, no señal cruda), el Transformer resultó ser el candidato más sólido tanto en desempeño como en costo computacional (más rápido de entrenar que el CNN+BiLSTM). El CNN+BiLSTM no justificó su complejidad adicional frente al baseline en este piloto — resultado real y honesto, no el que "se esperaría" si se asumiera que más complejidad siempre gana (regla de la sección 8). Esto es un solo dataset y una sola corrida por modelo (sin repetición con distintas semillas todavía), así que se reporta como evidencia inicial, no como conclusión definitiva sobre las tres arquitecturas en general.
+
+Los embeddings (128-d) de cada modelo y cada fold quedaron guardados en `embeddings/eeg/seed/<modelo>/subject_XX.npz` (no versionados en git, ver `.gitignore`; se regeneran con `training/train_eeg.py`), listos para la futura etapa de fusión multimodal.
+
+---
+
+## 12. Próximos pasos (esperando tu confirmación)
 
 Si apruebas este plan, la siguiente fase generará:
 

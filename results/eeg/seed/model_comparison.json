@@ -1,0 +1,90 @@
+{
+  "metric": "accuracy",
+  "per_subject": {
+    "A_baseline": [
+      0.5223924572775486,
+      0.3718326458456099,
+      0.5992928697701827,
+      0.38509133765468473,
+      0.5017678255745434,
+      0.33971714790807306,
+      0.3603417796110784,
+      0.44814378314672954,
+      0.5312315851502651,
+      0.3568061284619917,
+      0.4180907483794932,
+      0.3874484384207425,
+      0.22775486152033,
+      0.6579257513258692,
+      0.3447259870359458
+    ],
+    "B_cnn_bilstm": [
+      0.36706948640483383,
+      0.5,
+      0.5619335347432024,
+      0.30966767371601206,
+      0.5694864048338368,
+      0.3293051359516616,
+      0.324773413897281,
+      0.43051359516616317,
+      0.37915407854984895,
+      0.5966767371601208,
+      0.4471299093655589,
+      0.3459214501510574,
+      0.44561933534743203,
+      0.7250755287009063,
+      0.3459214501510574
+    ],
+    "C_transformer": [
+      0.5045317220543807,
+      0.4123867069486405,
+      0.47129909365558914,
+      0.7960725075528701,
+      0.38368580060422963,
+      0.4486404833836858,
+      0.6012084592145015,
+      0.36555891238670696,
+      0.6903323262839879,
+      0.5634441087613293,
+      0.43051359516616317,
+      0.7552870090634441,
+      0.459214501510574,
+      0.7386706948640483,
+      0.5196374622356495
+    ]
+  },
+  "omnibus": {
+    "test_name": "repeated-measures ANOVA (one-way approximation)",
+    "statistic": 3.5018573308078187,
+    "p_value": 0.039212636914557376,
+    "normality_p_value": 0.09952199429390439,
+    "used_parametric": true,
+    "justification": "Shapiro-Wilk per model: min p=0.0995 > 0.05: normality not rejected for any model, so ANOVA is used."
+  },
+  "pairwise": {
+    "A_baseline_vs_B_cnn_bilstm": {
+      "test_name": "paired t-test",
+      "statistic": -0.5059303990452638,
+      "p_value": 0.6207780081258919,
+      "normality_p_value": 0.382173069507738,
+      "used_parametric": true,
+      "justification": "Shapiro-Wilk on paired differences p=0.3822 > 0.05: normality not rejected, so a paired t-test is used."
+    },
+    "A_baseline_vs_C_transformer": {
+      "test_name": "paired t-test",
+      "statistic": -2.637982999004277,
+      "p_value": 0.019480727131875285,
+      "normality_p_value": 0.781003535050719,
+      "used_parametric": true,
+      "justification": "Shapiro-Wilk on paired differences p=0.7810 > 0.05: normality not rejected, so a paired t-test is used."
+    },
+    "B_cnn_bilstm_vs_C_transformer": {
+      "test_name": "paired t-test",
+      "statistic": -1.8969544058546388,
+      "p_value": 0.07865652648286184,
+      "normality_p_value": 0.3586573011696976,
+      "used_parametric": true,
+      "justification": "Shapiro-Wilk on paired differences p=0.3587 > 0.05: normality not rejected, so a paired t-test is used."
+    }
+  }
+}
