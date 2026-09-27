@@ -11,8 +11,44 @@
 
 Antes de entrar al análisis, dos advertencias metodológicas que condicionan todo lo demás (regla científica del punto 21: no inventar resultados):
 
-1. **Ninguno de los datasets está presente en este repositorio ni en este entorno de ejecución.** Todos requieren descarga desde el proveedor original, y varios (AffectNet, RAF-DB/RAF-ML, CK+, DEAP, SEED, DREAMER, MAHNOB-HCI, AMIGOS, WESAD) exigen firma de un EULA / acuerdo de uso académico antes de obtener acceso. El código que se genere en la siguiente fase debe ser **agnóstico a la ubicación de los datos** (rutas configurables vía `configs/`), y la ejecución real del entrenamiento deberá hacerse en tu entorno local/HPC una vez tengas los datasets descargados legalmente. Este entorno no descargará ni simulará datos.
-2. **"PME4" y "PPGE"** no corresponden a datasets que pueda verificar con la información disponible (no son nombres estándar reconocibles en la literatura de EEG/EMG/PPG-emoción que yo pueda confirmar con certeza). Los trato como **pendientes de verificación** (sección 7): necesito que confirmes fuente, licencia, estructura de archivos y diccionario de etiquetas antes de incluirlos en la matriz experimental con la misma seriedad que el resto. No voy a inventar sus características.
+1. **(Nota: esta afirmación de la primera versión del plan quedó desactualizada — ver secciones 0bis/0ter/0quater.)** En efecto, la mayoría de los datasets (AffectNet, CK+, DEAP, DREAMER, MAHNOB-HCI, AMIGOS, WESAD, RAF-ML) siguen sin estar presentes y requieren descarga con EULA. Pero **SEED (EEG), Yale, RAF-DB (etiquetas) y PME4 (manifiesto)** ya tienen contenido real verificado en este repositorio, como se detalla más abajo. El código seguirá siendo agnóstico a la ubicación de los datos (rutas configurables vía `configs/`) para los datasets que aún falten.
+2. **"PME4" y "PPGE"**: PME4 ya no es un dataset sin verificar — su manifiesto real confirma su estructura (ver 0quater). PPGE sigue sin identificar (sección 7). No voy a inventar características de lo que sigue sin evidencia real.
+
+---
+
+## 0bis. Inventario real verificado en la rama `main` de este repositorio
+
+Tras la primera versión de este plan se confirmó que la rama `main` de `data_emociones` **sí contiene datos** (no era un repositorio vacío; el plan original se escribió antes de hacer `git fetch` de `main`). Se verificó el contenido real descargando los objetos Git LFS e inspeccionando los archivos (no solo los nombres). Resultado:
+
+| Ruta en el repo | Contenido verificado | Estado |
+|---|---|---|
+| `Yale Face Database/` | 165 imágenes reales (15 sujetos × 11), íntegras | ✅ Utilizable (con las reservas de la sección 1.1) |
+| `data/` (duplicado de Yale) | Árbol Git idéntico a `Yale Face Database/` | 🗑️ **Eliminado** (commit `e049a6d` en `main`) por ser un duplicado exacto |
+| `EEG/desktop.ini`, `EEG/SEED_IV/desktop.ini` | Metadatos de sincronización de OneDrive/Windows, sin contenido de dataset | 🗑️ **Eliminados** (commit `e049a6d` en `main`) |
+| `EEG/SEED_IV/` | Tras quitar el `desktop.ini`, la carpeta queda vacía | ❌ SEED-IV no llegó a subirse realmente; pendiente si se quiere usar |
+| `EEG/SEED/*.npz` | Cargados con NumPy: `DatasetCaricatoNoImage.npz` → `arr_0` shape **(50910, 5, 62)** float32 (ventanas × 5 bandas de frecuencia × 62 canales, coherente con features de Differential Entropy por banda); `LabelsNoImage.npz` → 3 clases balanceadas (16800 / 16560 / 17550 → positivo/neutral/negativo); `SubjectsNoImage.npz` → **15 sujetos** (id 0–14), exactamente 3394 muestras por sujeto | ✅ **Es SEED real y consistente** con la literatura (15 sujetos, 3 clases, features DE 5-bandas). Es el dataset EEG con evidencia más sólida disponible hoy en el repo |
+| `PPG_Dataset.csv` (raíz, vía Git LFS) | 2576 filas × 2000 muestras de señal PPG cruda + columna `Label` con valores **"Normal" (1282)** y **"MI" (1294)** — MI = *Myocardial Infarction* (infarto de miocardio) | ⚠️ **No es un dataset de emociones**: es un dataset de diagnóstico cardíaco. Ver análisis de reuso en la sección 1.4 |
+| `PME4/`, `RAF-ML/` | Aparecen como **gitlinks rotos** (`160000 commit`, sin `.gitmodules`) — referencias a un commit de otro repositorio git que quedó pegado accidentalmente, sin URL asociada. Git no puede resolver ni descargar su contenido desde aquí | ❌ Sin contenido real en el repo. Fuente identificada (ver 0ter) pero bloqueada por red en este entorno |
+
+### 0ter. Fuente de PME4 y RAF-ML — bloqueada por política de red de este entorno
+
+Confirmaste que PME4 y RAF-ML están en esta carpeta de SharePoint/OneDrive institucional:
+`https://unadvirtualedu-my.sharepoint.com/:f:/g/personal/mariac_rodriguez_unad_edu_co/...`
+
+Se intentó el acceso (vía `curl` directo y vía la herramienta de fetch web) y **el dominio `unadvirtualedu-my.sharepoint.com` está bloqueado por la política de egress de este entorno en la nube** ("Access to unadvirtualedu-my.sharepoint.com is blocked by the network egress proxy"). No es un problema de permisos del enlace ni de credenciales: este sandbox no tiene salida de red hacia dominios SharePoint/OneDrive en absoluto.
+
+**Alternativa propuesta:** descarga tú los archivos de esa carpeta a tu equipo y súbelos al repositorio (o a esta rama) mediante `git add`/`git push` normal — evitando repetir el error anterior de arrastrar una carpeta que internamente era otro repositorio git (lo que produjo los gitlinks rotos). Si prefieres, puedo dejar preparado un script simple de "ingesta" (mover archivos a `data/PME4/` y `data/RAF-ML/` con Git LFS activado para los binarios) para que tú ejecutes la subida desde tu máquina, ya que este entorno no puede alcanzar SharePoint directamente.
+
+### 0quater. Actualización: subiste contenido real de RAF-DB y PME4 directamente a esta rama
+
+Mientras se redactaba este plan, subiste (vía la interfaz web de GitHub, commits "Add files via upload") tres archivos directamente a la rama `claude/unimodal-emotion-recognition-models-oacupp`: `train_labels.csv`, `test_labels.csv` y `PME4/PME4_dataset_configs.csv`. Se verificaron con el mismo rigor que el resto:
+
+| Archivo | Verificación real | Conclusión |
+|---|---|---|
+| `train_labels.csv` (12.271 filas) + `test_labels.csv` (3.068 filas) | Columnas `image,label`; nombres de archivo tipo `train_00001_aligned.jpg` / `test_0001_aligned.jpg` (convención de alineado facial típica de RAF); distribución de clases train = [1290, 281, 717, 4772, 1982, 705, 2524] para labels 1–7 | Esta distribución y estos tamaños **coinciden exactamente con el benchmark estándar de 7 clases de RAF-DB** (12.271 train + 3.068 test, con "Happy"=4 como clase mayoritaria). **Esto es RAF-DB, no RAF-ML** — son etiquetas de clase única (single-label), no distribuciones multi-etiqueta. Actualizo la sección 1.1 y la matriz para reflejar que lo que hay disponible es RAF-DB. **Importante:** solo están las etiquetas (CSV); las imágenes referenciadas (`train_00001_aligned.jpg`, etc.) no están en el repositorio todavía |
+| `PME4/PME4_dataset_configs.csv` (3.829 filas) | Manifiesto por ensayo con columnas: `subject` (11 sujetos, 1–11), `trial`, `emotion`/`emotion_num`, tiempos de habla, y **rutas** a `audio_wav`, 2 variantes de MFCC de audio, `raw_eeg_filepath` (5kHz), `raw_emg_filepath` (5kHz), `processed_eeg_filepath` (1kHz), `processed_emg_filepath`, y `face_vgg16_features_filepath`. 7 emociones casi perfectamente balanceadas (anger 548, disgust 545, fear 547, happy 546, neutral 548, sad 547, surprise 548) | **Confirma la descripción del prompt original**: PME4 es multimodal (audio + EEG + EMG + rasgos faciales) con 7 clases y sí existe con esa estructura. Pero **es solo el índice/manifiesto**: los archivos `.npy`/`.wav` reales referenzados por esas rutas (p.ej. `s01/t001/s01_t001_raw_eeg_5kHz.npy`) **no están en el repositorio** (verificado: 0 archivos `.npy` o `.wav` en todo el árbol de git). Sin esos archivos no se puede entrenar todavía sobre PME4, solo planear la ingesta. Nota de calidad de datos: se detectó al menos una fila (`subject=1, trial=11`) cuya columna `face_vgg16_features_filepath` apunta a `s08/t350/...` — una posible inconsistencia sujeto/ensayo en el manifiesto que conviene que verifiques en la fuente original |
+
+**Impacto en el plan:** ya no se trata a RAF-ML como "pendiente total" — se trata como **RAF-DB con etiquetas disponibles pero imágenes faltantes**, y RAF-ML como dataset separado que sigue sin evidencia de contenido real (el gitlink roto en `main` no aporta nada; si tienes RAF-ML de verdad, deberá subirse aparte). PME4 pasa de "sin verificar" a "estructura y taxonomía confirmadas, contenido de señal pendiente de subir".
 
 ---
 
@@ -24,7 +60,8 @@ Antes de entrar al análisis, dos advertencias metodológicas que condicionan to
 |---|---|---|---|---|---|---|
 | **FER2013** | 35.887 imágenes, sin ID de sujeto (recolectadas de Google Image Search) | 7 discretas: angry, disgust, fear, happy, sad, surprise, neutral | Grises 48×48, CSV con píxeles | Público (Kaggle) | Alta, pero con ruido de etiquetado documentado en literatura (~10-15%) y fuerte desbalance (disgust ≈ 1.5% del total) | No hay sujeto → no se puede hacer LOSO. Usar el split oficial (train/PublicTest/PrivateTest) y verificar duplicados casi-idénticos entre splits (perceptual hashing) |
 | **AffectNet** | ~1M recolectadas, ~450K anotadas manualmente | 8 discretas (7 básicas + contempt) + valencia/activación continuas | JPEG variable + landmarks | **Restringido**: requiere solicitud formal a los autores (Mohammad Mahoor lab) y EULA | Alta (única con anotación dimensional PAD parcial a nivel FER) | Sin ID de sujeto consistente (web scraping) → riesgo de imágenes casi-duplicadas entre train/val; deduplicación recomendada |
-| **RAF-DB / RAF-ML** | ~30.000 (RAF-DB) — RAF-ML es un subconjunto distinto con anotación de **distribución de etiquetas** (multi-label / label distribution learning), no clase única | RAF-DB: 7 básicas (+ subset de 11 compuestas); RAF-ML: distribución sobre 6 emociones | JPEG in-the-wild | **Restringido**: requiere solicitud a los autores | Alta, pero **RAF-ML no es un problema de clasificación single-label** — requiere función de pérdida distribucional (KL-divergence / Jensen-Shannon), no cross-entropy estándar | Sin ID de sujeto → mismo tratamiento que AffectNet |
+| **RAF-DB** ✅ **etiquetas reales verificadas en esta rama** | 12.271 train + 3.068 test (confirmado por `train_labels.csv`/`test_labels.csv`); sin ID de sujeto (in-the-wild) | 7 básicas, single-label (confirmado: distribución de clases coincide con el benchmark estándar) | Nombres `*_aligned.jpg` (rostros ya alineados) — **pero las imágenes no están subidas aún, solo las etiquetas** | Normalmente restringido (solicitud a los autores), aunque las etiquetas ya están en el repo | Alta — es un dataset single-label estándar, comparable con FER2013/CK+ | Sin ID de sujeto → mismo tratamiento que AffectNet (dedup por hash una vez estén las imágenes) |
+| **RAF-ML** | Desconocido — el gitlink roto en `main` no aporta contenido, y no se ha subido nada identificable como RAF-ML por separado | Se esperaría distribución sobre 6 emociones (label distribution learning), pero no hay evidencia real en el repo todavía | — | **Restringido**: requiere solicitud a los autores | No verificable aún | No verificable aún |
 | **CK+** | 123 sujetos, 593 secuencias (327 con etiqueta de emoción) | 7 básicas + contempt (8 clases en el subset etiquetado), asignadas al frame de apex de la secuencia | Secuencias de imágenes (neutral→apex) | Moderado: formulario a CMU | Alta, pero es un dataset **posado/controlado en laboratorio** — no generaliza directamente a expresión espontánea | ID de sujeto disponible → **LOSO viable**. Riesgo real: frames de la misma secuencia repartidos entre train/test (leakage temporal) — deben agruparse por secuencia y por sujeto |
 | **Yale Face Database** | 15 sujetos, 165 imágenes (11 por sujeto) | Categorías informales de variación (p.ej. "happy", "sad", "sleepy", "surprised", "wink") mezcladas con variaciones de iluminación/pose | GIF/PGM | Público | **Baja**: diseñado para reconocimiento facial bajo iluminación variable, no es un benchmark validado de emoción | Extremo: 15 sujetos es insuficiente para entrenar y validar una CNN profunda con generalización creíble. Cualquier LOSO aquí tendría intervalos de confianza inmanejables |
 
@@ -35,7 +72,7 @@ Antes de entrar al análisis, dos advertencias metodológicas que condicionan to
 | Dataset | Sujetos | Señales | Etiquetas | Fs | Duración | Acceso | Notas |
 |---|---|---|---|---|---|---|---|
 | **DEAP** | 32 | EEG 32 canales + periféricas (EOG, EMG zigomático/trapecio, GSR, respiración, **PPG/pletismografía**, temperatura); video facial frontal disponible para 22/32 sujetos | Valencia/activación/dominancia/liking, continuas 1–9 (autoreporte) | 512 Hz (versión preprocesada a 128 Hz) | 40 videos musicales de 1 min/sujeto | Restringido (EULA, Queen Mary University London) | **DEAP es multimodal**: la misma sesión aporta datos potencialmente a las cuatro ramas (EEG, EMG, PPG, y parcialmente FER vía el video facial). Esto no genera leakage dentro de un modelo unimodal, pero es crítico para la futura fusión: el split por sujeto debe ser **idéntico y consistente entre las cuatro ramas basadas en DEAP** |
-| **SEED** | 15 | EEG 62 canales | 3 discretas: positive/neutral/negative, asignadas por el clip de estímulo (no autoreporte) | 1000 Hz (preprocesado 200 Hz) | Clips de películas, 3 sesiones por sujeto (repetidas en días distintos) | Restringido (BCMI lab, SJTU) | Paradigma de etiquetado distinto a DEAP (etiqueta por estímulo, no por percepción individual) → no comparable directamente sin justificación. Estructura de sesiones repetidas: LOSO debe agrupar **todas las sesiones de un sujeto** en el mismo lado del split |
+| **SEED** ✅ **datos reales verificados en `main`** | 15 (confirmado: `SubjectsNoImage.npz`, ids 0–14, 3394 muestras/sujeto exactas) | EEG 62 canales, ya reducido a features **Differential Entropy por banda**: `DatasetCaricatoNoImage.npz` shape (50910, 5, 62) = ventanas × 5 bandas × 62 canales | 3 discretas: positive/neutral/negative (confirmado: `LabelsNoImage.npz`, 16800/16560/17550 — balanceadas), asignadas por el clip de estímulo (no autoreporte) | No aplica directamente (los datos ya vienen como features DE, no señal cruda); el preprocesamiento original habría usado ~200 Hz | Clips de películas, 3 sesiones por sujeto en el diseño original (no se puede confirmar desde los `.npz` si las 3 sesiones están mezcladas en las 3394 muestras/sujeto — pendiente de revisar metadatos adicionales si existen) | Restringido (BCMI lab, SJTU) — pero **ya está en este repo** | Paradigma de etiquetado distinto a DEAP (etiqueta por estímulo, no por percepción individual) → no comparable directamente sin justificación. Al ser ya features (no señal cruda), el pipeline de esta rama empieza en "extracción/aprendizaje de características → Deep Learning", no en filtrado crudo |
 | **DREAMER** | 23 | EEG 14 canales (Emotiv EPOC) + **ECG** (no EMG) | Valencia/activación/dominancia continuas 1–5 (autoreporte) | EEG 128 Hz, ECG 256 Hz | 18 clips de película | Moderado (acuerdo de datos) | Confirmo lo que indica la propia consigna: DREAMER trae ECG, no EMG — coherente con que el prompt no lo liste en la sección EMG |
 
 ### 1.3 EMG
@@ -45,9 +82,9 @@ Antes de entrar al análisis, dos advertencias metodológicas que condicionan to
 | **DEAP** | 32 | **Sí**: 2 canales (zigomático mayor, trapecio) | Igual que EEG (PAD continuo) | Restringido | Mismo caveat de consistencia de splits entre ramas |
 | **MAHNOB-HCI** | 27 | ⚠️ **Por verificar**: la documentación pública estándar de MAHNOB-HCI que conozco incluye EEG (32 ch), ECG, GSR, respiración, temperatura y **video facial/corporal**, pero no recuerdo con certeza canales de electrodos EMG dedicados — la expresión facial ahí se capta por video, no por EMG | Autoreporte + etiquetado externo de arousal/valencia | Restringido | **No lo incluyo en la matriz experimental de EMG hasta confirmar** que el release contiene señal EMG cruda. Alternativa si no la tiene: excluirlo de esta rama (podría eventualmente aportar a FER vía video) |
 | **AMIGOS** | 40 | ⚠️ **Por verificar**: el release estándar que conozco es EEG (14 ch Emotiv), ECG, GSR + video facial, sin canal EMG dedicado | Valencia/activación/dominancia continuas + anotación externa | Restringido | Mismo caveat que MAHNOB-HCI |
-| **PME4** | — | Desconocido | 7 clases (según la consigna) | Desconocido | No puedo verificar este dataset con la información que tengo. Necesito la referencia/paper o el repositorio de origen antes de incluirlo con parámetros reales |
+| **PME4** ✅ **manifiesto real verificado en esta rama** | 11 sujetos (confirmado: ids 1–11 en `PME4_dataset_configs.csv`) | **Sí**: el manifiesto confirma `raw_emg_filepath` (5kHz) y `processed_emg_filepath` por cada uno de los 3.829 ensayos | 7 discretas, balanceadas (anger/disgust/fear/happy/neutral/sad/surprise, ~547 c/u) | Fuente identificada (SharePoint institucional), bloqueada por red en este entorno (ver 0ter) | Estructura y taxonomía confirmadas; **falta subir los archivos `.npy` de señal real** (el CSV es solo el índice/manifiesto, 0 archivos de señal presentes en el repo) |
 
-**Implicación:** de los 4 datasets propuestos para EMG, solo **DEAP** puedo confirmar con seguridad que contiene señal EMG cruda utilizable. Propongo iniciar la rama EMG con DEAP como dataset primario, y tratar MAHNOB-HCI/AMIGOS/PME4 como "pendientes de verificación de disponibilidad de canal" antes de comprometer arquitectura y presupuesto de tiempo en ellos.
+**Implicación actualizada:** ahora hay **dos** datasets con evidencia real de canal EMG: DEAP (EULA pendiente) y **PME4 (manifiesto confirmado, contenido de señal pendiente de subida)**. PME4 es además multimodal por diseño (audio + EEG + EMG + features faciales por el mismo sujeto/ensayo), lo que lo hace muy valioso para la futura fusión si se puede completar la subida de los archivos de señal. MAHNOB-HCI/AMIGOS siguen como "pendientes de verificación de canal EMG" hasta que confirmes.
 
 ### 1.4 PPG
 
@@ -56,6 +93,18 @@ Antes de entrar al análisis, dos advertencias metodológicas que condicionan to
 | **DEAP** | 32 | Canal de pletismografía (BVP/PPG) | PAD continuo | 512→128 Hz | Restringido | Mismo caveat de consistencia de splits |
 | **WESAD** | 15 | PPG/BVP vía Empatica E4 (muñeca) + ECG/EMG/EDA/temp/resp vía RespiBAN (pecho) | **Condiciones**, no emociones básicas: baseline / estrés (TSST) / diversión (amusement) / meditación; + autoreporte PANAS/SAM | E4 BVP 64 Hz, RespiBAN 700 Hz | Moderado (formulario Bosch) | El ground truth es **por condición experimental**, no una taxonomía de emociones discretas — mapeable de forma aproximada a alto/bajo arousal y valencia negativa/positiva, pero debe documentarse como un mapeo, no una equivalencia directa |
 | **PPGE** | — | Desconocido | Desconocido | — | Desconocido | Igual que PME4: no puedo verificar este dataset. Pendiente de que aportes la fuente |
+| **`PPG_Dataset.csv` (ya presente en `main`)** | Sin metadato de sujeto en el CSV (2576 filas, no se puede saber cuántos individuos distintos hay sin un ID) | 2000 muestras de señal PPG cruda por fila (fs y duración no documentadas en el repo — no hay archivo README asociado) | **"Normal" (1282) / "MI"** — infarto de miocardio, no una emoción | Desconocida (no hay metadato) | Ya está en el repo (posiblemente un dataset público tipo Kaggle "PPG for MI detection", pero no puedo confirmar la fuente exacta sin metadato) | Ver análisis de reutilización abajo |
+
+### Análisis de reutilización de `PPG_Dataset.csv` (punto 3 de tu confirmación)
+
+**No puede usarse como ground truth de emoción.** "Normal" vs "MI" es un constructo clínico (presencia de infarto), no una etiqueta de valencia/activación/emoción — usarlo como si fuera una clase emocional introduciría una variable de confusión no válida (un paciente con infarto tiene alteraciones cardiovasculares que no tienen relación causal con un estado emocional inducido experimentalmente). Esto sería mezclar constructos, algo que el punto 13 y el punto 21 del plan piden evitar explícitamente.
+
+**Usos legítimos que sí propongo:**
+1. **Pre-entrenamiento del encoder PPG (transfer learning de bajo nivel):** usar las 2576 señales para entrenar de forma no supervisada / auto-supervisada (autoencoder, o un encoder contrastivo) un extractor de morfología de pulso genérico, y luego transferir/ajustar (fine-tuning) ese encoder sobre el dataset real de emoción (DEAP-PPG o WESAD) que sí tenga etiqueta afectiva. Esto es razonable porque la morfología del pulso PPG es un dato de dominio compartido, aunque la tarea (infarto vs. emoción) sea distinta.
+2. **Banco de pruebas para el pipeline de preprocesamiento:** validar la detección de picos, el cálculo de HR/PRV-HRV y las características de morfología de onda (secciones 6 y 9 del plan) sobre señal PPG real, antes de aplicarlas al dataset de emoción — como prueba de humo del código, no como fuente de resultados de investigación.
+3. **Nunca:** como fila adicional de "dataset de emoción PPG" en la matriz experimental (sección 6), ni mezclado con DEAP/WESAD en el mismo entrenamiento.
+
+**Limitación a documentar:** no hay README ni metadato de frecuencia de muestreo junto al CSV en el repo, así que la frecuencia de muestreo real (necesaria para convertir "muestras" a HR real en bpm) queda como supuesto a verificar antes de usarlo, incluso para los usos 1 y 2.
 
 ---
 
@@ -135,20 +184,21 @@ En todos los casos, la arquitectura "C" expone dos salidas (clasificación + emb
 |---|---|---|---|---|---|---|
 | FER | FER2013 | CNN | ResNet18/EfficientNet-B0 | Mejor de B + embedding | Split oficial + dedup | ✅ Listo para implementar |
 | FER | AffectNet | CNN | EfficientNet | Mejor de B + embedding | Split estratificado + dedup | ⚠️ Requiere que gestiones el acceso (EULA) antes de descargar |
-| FER | RAF-DB | CNN | ResNet | Mejor de B + embedding | Split oficial | ⚠️ Requiere acceso |
-| FER | RAF-ML | CNN (softmax+KL) | ResNet (softmax+KL) | Mejor de B + embedding | Split oficial | ⚠️ Requiere acceso; pérdida distinta (LDL) |
+| FER | RAF-DB | CNN | ResNet | Mejor de B + embedding | Split oficial (ya definido por `train_labels.csv`/`test_labels.csv`) | ✅ **Etiquetas reales en el repo**; ⚠️ faltan subir las imágenes `*_aligned.jpg` para poder entrenar |
+| FER | RAF-ML | CNN (softmax+KL) | ResNet (softmax+KL) | Mejor de B + embedding | Split oficial | ❌ **Pendiente**: sin evidencia real de contenido en el repo (ver 1.1) |
 | FER | CK+ | CNN (frame apex) | CNN+BiLSTM (secuencia) | Transformer temporal | LOSO agrupado por sujeto/secuencia | ⚠️ Requiere formulario CMU |
 | FER | Yale | Transfer learning | — | Estudio de caso, no benchmark | Sin LOSO formal | ⚠️ Uso restringido a análisis cualitativo (ver 1.1) |
 | EEG | DEAP | CNN 1D/2D | CNN+BiLSTM | Transformer/Graph (a decidir tras baseline) | LOSO | ⚠️ Requiere EULA |
-| EEG | SEED | CNN | CNN+BiLSTM | A decidir | LOSO agrupado por sesión | ⚠️ Requiere acceso BCMI |
+| EEG | **SEED** | CNN sobre features DE (50910,5,62) | CNN+BiLSTM | A decidir tras baseline | LOSO (15 sujetos, ids confirmados) | ✅ **Datos reales ya en `main`, verificados (shapes y balance de clases confirmados). Listo para implementar sin depender de descargas externas** |
 | EEG | DREAMER | CNN | CNN+BiLSTM | A decidir | LOSO | ⚠️ Requiere acuerdo de datos |
 | EMG | DEAP | MLP (features) | CNN 1D | CNN+LSTM/Transformer | LOSO | ⚠️ Requiere EULA. Dataset primario confirmado para esta rama |
 | EMG | MAHNOB-HCI | — | — | — | — | ❌ **Pendiente**: confirmar si el release incluye canal EMG crudo antes de comprometer diseño |
 | EMG | AMIGOS | — | — | — | — | ❌ **Pendiente**: mismo caveat |
-| EMG | PME4 | — | — | — | — | ❌ **Pendiente**: dataset no verificable con la información actual; necesito referencia/fuente |
+| EMG | PME4 | MLP (features) | CNN 1D | CNN+LSTM/Transformer | LOSO (11 sujetos) | ⚠️ **Estructura y canal EMG confirmados** (manifiesto real, 3.829 ensayos); falta subir los `.npy` de señal cruda/procesada referenciados (bloqueado por red en este entorno, sección 0ter) |
 | PPG | DEAP | CNN 1D | CNN+BiLSTM | Transformer | LOSO | ⚠️ Requiere EULA |
 | PPG | WESAD | CNN 1D | CNN+BiLSTM | Transformer | LOSO | ⚠️ Requiere formulario Bosch; etiqueta = condición, documentar mapeo a V/A |
 | PPG | PPGE | — | — | — | — | ❌ **Pendiente**: dataset no verificable, necesito fuente |
+| PPG | `PPG_Dataset.csv` (ya en `main`) | — | — | — | No aplica como rama de emoción | ❌ **Excluido de la matriz de emoción** (etiqueta clínica Normal/MI, no afectiva). Reservado solo para pre-entrenamiento de encoder y pruebas de pipeline (ver 1.4) |
 
 **Nota importante:** ningún experimento se "fuerza". Las filas marcadas ❌ no entran a la matriz de ejecución hasta que confirmes fuente/acceso/estructura, tal como pide el punto 21 (no simular resultados, no forzar experimentación sin base).
 
@@ -156,10 +206,12 @@ En todos los casos, la arquitectura "C" expone dos salidas (clasificación + emb
 
 ## 7. Datasets que requieren tu confirmación antes de seguir
 
-1. **PME4** — necesito el paper/fuente original o el repositorio de descarga. Sin eso no puedo definir sujetos, fs, canales ni formato real.
-2. **PPGE** — mismo caso.
-3. **MAHNOB-HCI y AMIGOS para EMG** — necesito que confirmes si tienes acceso a una versión de estos datasets que incluya canal EMG facial crudo (electrodos), distinto del video facial. Si no lo tienen, propongo: (a) excluirlos de la rama EMG, o (b) reasignarlos como fuente adicional de video para la rama FER en una fase posterior (fuera del alcance actual).
-4. **Acceso EULA pendiente** en AffectNet, RAF-DB/RAF-ML, CK+, DEAP, SEED, DREAMER, MAHNOB-HCI, AMIGOS, WESAD — asumo que como investigador doctoral ya gestionarás o tienes en trámite estos accesos; el código se construirá para leer desde una ruta local configurable, nunca para descargar automáticamente contenido restringido.
+1. **PME4** — estructura y taxonomía ya confirmadas (manifiesto real subido). Falta que subas los archivos de señal (`.npy`/`.wav`) referenciados por el manifiesto; la fuente (SharePoint institucional) está bloqueada por red en este entorno (sección 0ter), así que la subida debe hacerse desde tu equipo, como archivos normales (con Git LFS para los binarios), no como submódulo/repo anidado.
+2. **RAF-ML** — a diferencia de RAF-DB (ya con etiquetas reales en el repo), RAF-ML sigue sin ningún contenido verificable. Si tienes el dataset real, súbelo aparte (no como el gitlink roto que había en `main`).
+3. **RAF-DB (imágenes)** — ya tenemos las etiquetas reales; falta subir las imágenes `*_aligned.jpg` referenciadas en los CSV para poder entrenar.
+4. **PPGE** — sigue sin identificar; no está en el repo ni tengo fuente. Si es distinto de `PPG_Dataset.csv` (que ya descarté como no-emocional), necesito su origen.
+5. **MAHNOB-HCI y AMIGOS para EMG** — necesito que confirmes si tienes acceso a una versión de estos datasets que incluya canal EMG facial crudo (electrodos), distinto del video facial. Si no lo tienen, propongo: (a) excluirlos de la rama EMG, o (b) reasignarlos como fuente adicional de video para la rama FER en una fase posterior (fuera del alcance actual).
+6. **Acceso EULA pendiente** en AffectNet, CK+, DEAP, DREAMER, MAHNOB-HCI, AMIGOS, WESAD — asumo que como investigador doctoral ya gestionarás o tienes en trámite estos accesos; el código se construirá para leer desde una ruta local configurable, nunca para descargar automáticamente contenido restringido. **SEED, RAF-DB (etiquetas) y PME4 (manifiesto) ya no están en esta lista**: ya tienen contenido real y verificado en el repo.
 
 ---
 
@@ -178,19 +230,20 @@ En todos los casos, la arquitectura "C" expone dos salidas (clasificación + emb
 - No se generan resultados numéricos de ejemplo/placeholder.
 - No se fuerza el uso de PME4, PPGE, MAHNOB-EMG ni AMIGOS-EMG hasta verificación.
 - No se trata a Yale como benchmark de generalización.
+- No se usa `PPG_Dataset.csv` (Normal/MI) como fuente de etiqueta emocional.
 
 ---
 
 ## 10. Próximos pasos (esperando tu confirmación)
 
-Si apruebas este plan, la siguiente fase generará, **sin ejecutar entrenamiento aún** (porque no hay datos disponibles en este entorno):
+Si apruebas este plan, la siguiente fase generará:
 
-1. Estructura de proyecto (`data/`, `preprocessing/`, `models/`, `training/`, `evaluation/`, `experiments/`, `embeddings/`, `checkpoints/`, `results/`, `configs/`, `notebooks/`) con configs YAML por experimento.
-2. Módulos de preprocesamiento por modalidad (interfaces + lógica, sobre datos de ejemplo sintéticos solo para pruebas unitarias de forma/shape, nunca como sustituto de resultados reales).
-3. Definición de arquitecturas A/B/C por modalidad en PyTorch.
-4. Lógica de split LOSO/estratificado con auditoría de leakage automatizada.
+1. Estructura de proyecto (`preprocessing/`, `models/`, `training/`, `evaluation/`, `experiments/`, `embeddings/`, `checkpoints/`, `results/`, `configs/`, `notebooks/`) con configs YAML por experimento.
+2. Módulos de preprocesamiento por modalidad (interfaces + lógica). **Para EEG/SEED esto ya puede ejecutarse de verdad hoy** (datos reales verificados). **RAF-DB (FER) y PME4 (EMG/multimodal)** quedarían listos en cuanto subas, respectivamente, las imágenes `*_aligned.jpg` y los `.npy`/`.wav` de señal — el código de preprocesamiento puede escribirse ya contra su estructura real (ya conocida), aunque no pueda ejecutarse end-to-end hasta que lleguen esos archivos.
+3. Definición de arquitecturas A/B/C por modalidad en PyTorch, empezando por SEED (EEG) como caso piloto totalmente ejecutable hoy.
+4. Lógica de split LOSO/estratificado con auditoría de leakage automatizada (SEED: LOSO sobre 15 sujetos confirmados; PME4: LOSO sobre 11 sujetos confirmados; RAF-DB: split oficial ya definido por los CSV).
 5. Scripts de entrenamiento/evaluación parametrizados por config.
 
-**Preguntas abiertas que necesito que resuelvas antes de continuar** (ver sección 7): fuente de PME4 y PPGE, y confirmación de canal EMG en MAHNOB-HCI/AMIGOS.
+**Preguntas abiertas que necesito que resuelvas antes de continuar** (ver sección 7): que subas las imágenes de RAF-DB, los archivos de señal de PME4 y el dataset RAF-ML real (los tres bloqueados por red desde este entorno hacia SharePoint), fuente de PPGE, y confirmación de canal EMG en MAHNOB-HCI/AMIGOS.
 
-¿Apruebas este plan experimental tal como está, con las exclusiones/reservas señaladas (Yale como estudio de caso, RAF-ML con pérdida LDL, PME4/PPGE/MAHNOB-EMG/AMIGOS-EMG pendientes), o quieres ajustar algo antes de que genere la estructura de código?
+¿Apruebas este plan experimental tal como está, con las exclusiones/reservas señaladas (Yale como estudio de caso, RAF-ML pendiente de contenido real, `PPG_Dataset.csv` excluido como ground truth emocional, MAHNOB-EMG/AMIGOS-EMG/PPGE pendientes), y confirmas que empecemos a generar el código real primero para **EEG/SEED** (ejecutable hoy) y dejemos el andamiaje de **RAF-DB (FER)** y **PME4 (EMG)** listo para cuando subas los archivos de señal/imagen que faltan?
