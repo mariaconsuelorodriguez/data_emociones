@@ -50,6 +50,18 @@ Mientras se redactaba este plan, subiste (vía la interfaz web de GitHub, commit
 
 **Impacto en el plan:** ya no se trata a RAF-ML como "pendiente total" — se trata como **RAF-DB con etiquetas disponibles pero imágenes faltantes**, y RAF-ML como dataset separado que sigue sin evidencia de contenido real (el gitlink roto en `main` no aporta nada; si tienes RAF-ML de verdad, deberá subirse aparte). PME4 pasa de "sin verificar" a "estructura y taxonomía confirmadas, contenido de señal pendiente de subir".
 
+### 0quinquies. Segunda actualización: subiste las imágenes reales y los .zip de señal de PME4 a `main`
+
+Ajustaste las carpetas `PME4` y `RAF-ML` en `main` (commit "Corrigiendo carpetas PME4 y RAF-ML para que se vean normales"). Verificación real, incluyendo descarga y extracción efectiva de los archivos LFS (no solo nombres):
+
+**PME4 — ahora completo y verificado de extremo a extremo.** `PME4/` contiene 11 archivos `sXX.zip` (~510 MB cada uno, ~5.6 GB en total) vía Git LFS. Se descargó `s01.zip` (510.324.081 bytes reales) y se abrió sin extraerlo por completo: contiene 2.808 archivos organizados como `s01/tNNN/...`, con exactamente 350 ensayos × {`raw_eeg_5kHz.npy`, `raw_emg_5kHz.npy`, 2 variantes de MFCC de audio, `processed_eeg`/`processed_emg`, el `.wav`}, tal como describe el manifiesto. Se cargó un archivo real con NumPy: `s01_t001_raw_emg_5kHz.npy` → shape **(6, 25000)** float64 (6 canales EMG, 25.000 muestras = 5 s a 5kHz), `s01_t001_raw_eeg_5kHz.npy` → shape **(8, 25000)**. Añadí `load_array_from_zip`/`load_raw_emg_from_zip`/`load_raw_eeg_from_zip` en `preprocessing/emg/pme4_dataset.py` para leer un `.npy` directamente desde el `.zip` sin extraer el archivo completo (~500 MB) a disco, y lo validé contra el archivo real. **PME4 pasa de "pendiente" a "listo para entrenar"** en la rama EMG.
+
+**"RAF-ML" — resultó ser RAF-DB duplicado, no un dataset nuevo.** La carpeta traía: (a) las mismas imágenes y etiquetas de RAF-DB (12.271 train + 3.068 test, en subcarpetas por clase 1–7, distribución de clases idéntica a la ya verificada) y (b) una copia bit a bit de los 11 `.zip` de PME4 y de su manifiesto (mismos hashes SHA-256 exactos que `PME4/`). No apareció en ningún lado un dataset RAF-ML real (distribución de etiquetas). Con tu confirmación, **renombré `RAF-ML/` a `RAF-DB/`** y eliminé los archivos de PME4 duplicados dentro de esa carpeta; RAF-ML queda sin contenido, pendiente de que subas el dataset auténtico si lo tienes. Reescribí `preprocessing/fer/raf_db_dataset.py` para leer directamente la estructura real `RAF-DB/DATASET/{train,test}/<1-7>/*.jpg` (antes asumía imágenes sueltas + CSV) y lo validé cargando una imagen real (100×100 px) con el conteo de clases exacto. **RAF-DB pasa de "etiquetas sin imágenes" a "listo para entrenar"**.
+
+**Nota sobre el histórico de `main`:** tu ajuste se subió como un *force-push* (reemplazó el historial anterior de `main` en vez de continuarlo), lo que revirtió sin querer la limpieza que habíamos hecho antes (el duplicado `data/` y los `desktop.ini` de OneDrive habían vuelto a aparecer). Los volví a eliminar en un commit normal sobre tu nuevo `main` — no hace falta que hagas nada al respecto, solo lo dejo documentado para que sepas por qué aparece dos veces en el historial.
+
+**Resultado real del piloto EEG/SEED (LOSO completo, 15 sujetos, modelo baseline):** accuracy media 43.0% ± 10.9%, balanced accuracy 42.9% ± 11.0%, F1 macro 34.9% ± 13.8% (azar ≈ 33.3% en 3 clases). Resultado real, no simulado — ver `results/eeg/seed/baseline/loso_summary.json`. Es un resultado modesto pero por encima del azar y consistente con lo reportado en la literatura para reconocimiento de emociones EEG *subject-independent* (LOSO), que suele ser sustancialmente más difícil que la validación dentro del mismo sujeto.
+
 ---
 
 ## 1. Análisis de datasets por modalidad
@@ -184,8 +196,8 @@ En todos los casos, la arquitectura "C" expone dos salidas (clasificación + emb
 |---|---|---|---|---|---|---|
 | FER | FER2013 | CNN | ResNet18/EfficientNet-B0 | Mejor de B + embedding | Split oficial + dedup | ✅ Listo para implementar |
 | FER | AffectNet | CNN | EfficientNet | Mejor de B + embedding | Split estratificado + dedup | ⚠️ Requiere que gestiones el acceso (EULA) antes de descargar |
-| FER | RAF-DB | CNN | ResNet | Mejor de B + embedding | Split oficial (ya definido por `train_labels.csv`/`test_labels.csv`) | ✅ **Etiquetas reales en el repo**; ⚠️ faltan subir las imágenes `*_aligned.jpg` para poder entrenar |
-| FER | RAF-ML | CNN (softmax+KL) | ResNet (softmax+KL) | Mejor de B + embedding | Split oficial | ❌ **Pendiente**: sin evidencia real de contenido en el repo (ver 1.1) |
+| FER | RAF-DB | CNN | ResNet | Mejor de B + embedding | Split oficial (`RAF-DB/DATASET/{train,test}/<1-7>`, 12.271/3.068 verificado) | ✅ **Imágenes y etiquetas reales en el repo, listo para entrenar** (`preprocessing/fer/raf_db_dataset.py` ya implementado y probado) |
+| FER | RAF-ML | CNN (softmax+KL) | ResNet (softmax+KL) | Mejor de B + embedding | Split oficial | ❌ **Pendiente**: lo que había con este nombre resultó ser RAF-DB duplicado (ver 0quinquies); sin evidencia real de RAF-ML en ningún lado |
 | FER | CK+ | CNN (frame apex) | CNN+BiLSTM (secuencia) | Transformer temporal | LOSO agrupado por sujeto/secuencia | ⚠️ Requiere formulario CMU |
 | FER | Yale | Transfer learning | — | Estudio de caso, no benchmark | Sin LOSO formal | ⚠️ Uso restringido a análisis cualitativo (ver 1.1) |
 | EEG | DEAP | CNN 1D/2D | CNN+BiLSTM | Transformer/Graph (a decidir tras baseline) | LOSO | ⚠️ Requiere EULA |
@@ -194,7 +206,7 @@ En todos los casos, la arquitectura "C" expone dos salidas (clasificación + emb
 | EMG | DEAP | MLP (features) | CNN 1D | CNN+LSTM/Transformer | LOSO | ⚠️ Requiere EULA. Dataset primario confirmado para esta rama |
 | EMG | MAHNOB-HCI | — | — | — | — | ❌ **Pendiente**: confirmar si el release incluye canal EMG crudo antes de comprometer diseño |
 | EMG | AMIGOS | — | — | — | — | ❌ **Pendiente**: mismo caveat |
-| EMG | PME4 | MLP (features) | CNN 1D | CNN+LSTM/Transformer | LOSO (11 sujetos) | ⚠️ **Estructura y canal EMG confirmados** (manifiesto real, 3.829 ensayos); falta subir los `.npy` de señal cruda/procesada referenciados (bloqueado por red en este entorno, sección 0ter) |
+| EMG | PME4 | MLP (features) | CNN 1D | CNN+LSTM/Transformer | LOSO (11 sujetos) | ✅ **Señal real verificada y cargable** (`s01.zip` descargado, `raw_emg_5kHz.npy` shape (6,25000) confirmado con NumPy); `preprocessing/emg/pme4_dataset.py` ya lee directo desde los `.zip`, listo para entrenar |
 | PPG | DEAP | CNN 1D | CNN+BiLSTM | Transformer | LOSO | ⚠️ Requiere EULA |
 | PPG | WESAD | CNN 1D | CNN+BiLSTM | Transformer | LOSO | ⚠️ Requiere formulario Bosch; etiqueta = condición, documentar mapeo a V/A |
 | PPG | PPGE | — | — | — | — | ❌ **Pendiente**: dataset no verificable, necesito fuente |
@@ -206,12 +218,12 @@ En todos los casos, la arquitectura "C" expone dos salidas (clasificación + emb
 
 ## 7. Datasets que requieren tu confirmación antes de seguir
 
-1. **PME4** — estructura y taxonomía ya confirmadas (manifiesto real subido). Falta que subas los archivos de señal (`.npy`/`.wav`) referenciados por el manifiesto; la fuente (SharePoint institucional) está bloqueada por red en este entorno (sección 0ter), así que la subida debe hacerse desde tu equipo, como archivos normales (con Git LFS para los binarios), no como submódulo/repo anidado.
-2. **RAF-ML** — a diferencia de RAF-DB (ya con etiquetas reales en el repo), RAF-ML sigue sin ningún contenido verificable. Si tienes el dataset real, súbelo aparte (no como el gitlink roto que había en `main`).
-3. **RAF-DB (imágenes)** — ya tenemos las etiquetas reales; falta subir las imágenes `*_aligned.jpg` referenciadas en los CSV para poder entrenar.
+1. ~~**PME4**~~ — **resuelto**: señal real verificada y cargable (ver 0quinquies).
+2. **RAF-ML** — sigue sin ningún contenido verificable; lo que tenía este nombre era RAF-DB duplicado (ver 0quinquies) y ya se limpió. Si tienes el dataset RAF-ML real, súbelo aparte.
+3. ~~**RAF-DB (imágenes)**~~ — **resuelto**: imágenes y etiquetas reales verificadas, listo para entrenar (ver 0quinquies).
 4. **PPGE** — sigue sin identificar; no está en el repo ni tengo fuente. Si es distinto de `PPG_Dataset.csv` (que ya descarté como no-emocional), necesito su origen.
 5. **MAHNOB-HCI y AMIGOS para EMG** — necesito que confirmes si tienes acceso a una versión de estos datasets que incluya canal EMG facial crudo (electrodos), distinto del video facial. Si no lo tienen, propongo: (a) excluirlos de la rama EMG, o (b) reasignarlos como fuente adicional de video para la rama FER en una fase posterior (fuera del alcance actual).
-6. **Acceso EULA pendiente** en AffectNet, CK+, DEAP, DREAMER, MAHNOB-HCI, AMIGOS, WESAD — asumo que como investigador doctoral ya gestionarás o tienes en trámite estos accesos; el código se construirá para leer desde una ruta local configurable, nunca para descargar automáticamente contenido restringido. **SEED, RAF-DB (etiquetas) y PME4 (manifiesto) ya no están en esta lista**: ya tienen contenido real y verificado en el repo.
+6. **Acceso EULA pendiente** en AffectNet, CK+, DEAP, DREAMER, MAHNOB-HCI, AMIGOS, WESAD — asumo que como investigador doctoral ya gestionarás o tienes en trámite estos accesos; el código se construirá para leer desde una ruta local configurable, nunca para descargar automáticamente contenido restringido. **SEED, RAF-DB y PME4 ya no están en esta lista**: los tres tienen contenido real, verificado y listo para entrenar en el repo.
 
 ---
 
