@@ -1,0 +1,112 @@
+{
+  "dataset": "EEG/SEED",
+  "n_samples": 50910,
+  "folds": [
+    {
+      "test_subject": 0,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 1,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 2,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 3,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 4,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 5,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 6,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 7,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 8,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 9,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 10,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 11,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 12,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 13,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    },
+    {
+      "test_subject": 14,
+      "n_train": 44122,
+      "n_val": 3394,
+      "n_test": 3394,
+      "status": "OK"
+    }
+  ],
+  "all_folds_passed": true
+}
