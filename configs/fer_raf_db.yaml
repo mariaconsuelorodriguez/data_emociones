@@ -1,0 +1,29 @@
+experiment_name: fer_raf_db
+seed: 42
+
+data:
+  dataset_root: RAF-DB/DATASET
+  val_fraction: 0.1  # stratified split carved out of the official train set
+
+model:
+  # one of: baseline, resnet18
+  type: baseline
+  embedding_dim: 128
+  # ImageNet-pretrained weights require internet access to download.pytorch.org,
+  # which is blocked in this environment -- see PLAN_EXPERIMENTAL.md. Trains
+  # from random initialization when true networking isn't available.
+  pretrained: true
+
+training:
+  batch_size: 64
+  epochs: 8
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  device: cpu
+  use_class_weights: true
+  num_workers: 2
+
+output:
+  results_dir: results/fer/raf_db
+  embeddings_dir: embeddings/fer/raf_db
+  checkpoints_dir: checkpoints/fer/raf_db

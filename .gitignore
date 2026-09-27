@@ -7,3 +7,4 @@ __pycache__/
 # small. Aggregated JSON summaries under results/ ARE committed.
 checkpoints/**/*.pt
 embeddings/**/*.npz
+data_cache/
