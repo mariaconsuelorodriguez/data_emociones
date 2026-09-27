@@ -272,6 +272,43 @@ Los embeddings (128-d) de cada modelo y cada fold quedaron guardados en `embeddi
 
 ---
 
+## 11bis. Resultados reales — RAF-DB, piloto A/B completo (12.271 train / 3.068 test)
+
+Sin sujeto (in-the-wild) → sin LOSO; split oficial train/test + validación estratificada (10%) del train. Pérdida ponderada por clase (inversa de frecuencia) por el desbalance conocido (Happy ≈ 39% del train). Resultados reales sobre el test set completo (`results/fer/raf_db/{baseline,resnet18}/test_summary.json`):
+
+| Modelo | Accuracy | Balanced Accuracy | F1 macro | Tiempo |
+|---|---|---|---|---|
+| A — CNN baseline (desde cero) | 33.1% | 28.3% | 22.9% | ~16 min |
+| B — ResNet18 (**sin pesos ImageNet**) | **62.0%** | **59.2%** | **53.3%** | ~16 min |
+
+(Azar ≈ 14.3% en 7 clases.)
+
+**Limitación honesta a documentar:** `download.pytorch.org` está bloqueado por la política de red de este entorno (mismo tipo de restricción que bloqueó SharePoint), así que ResNet18 **no pudo cargar los pesos preentrenados de ImageNet** — entrenó desde inicialización aleatoria. Aun así superó ampliamente al baseline, lo que sugiere que la arquitectura residual profunda ayuda por sí sola en este problema. Un resultado con transfer learning real (ejecutado en tu equipo, con acceso a internet) muy probablemente sería mejor todavía — vale la pena repetir el experimento fuera de este sandbox antes de considerar esta comparación definitiva.
+
+## 11ter. Resultados reales — PME4 (EMG), piloto A/B/C completo (LOSO, 11 sujetos)
+
+Verificación de contenido real end-to-end: se descargaron y abrieron los 11 `.zip` (~5.6GB), se extrajeron features y señal decimada (5kHz→1kHz, con filtro anti-aliasing de `scipy.signal.decimate`) de los 3.829 ensayos reales, cacheados una vez (`data_cache/pme4/pme4_cache.npz`, 460MB) para no releer los zips en cada fold. Resultados reales (`results/emg/pme4/{mlp_features,cnn1d,cnn_lstm}/loso_summary.json`):
+
+| Modelo | Accuracy | F1 macro |
+|---|---|---|
+| A — MLP sobre features (RMS/MAV/WL/ZC/SSC/amplitud+duración de contracción/MNF/MDF) | 15.4% ± 2.7% | 11.0% ± 3.1% |
+| B — CNN1D sobre señal cruda decimada | 14.6% ± 2.9% | 9.4% ± 3.1% |
+| C — CNN + BiLSTM | 14.9% ± 2.7% | 11.5% ± 3.7% |
+
+(Azar ≈ 14.3% en 7 clases.)
+
+**Comparación estadística** (`evaluation/compare_pme4_models.py`): Shapiro-Wilk no rechaza normalidad → ANOVA de un factor: F=0.23, **p=0.797** — **sin diferencia significativa entre los tres modelos**; los tres son estadísticamente indistinguibles entre sí y del azar.
+
+**Diagnóstico de descarte de error (no es un bug):** antes de aceptar este resultado se corrió un chequeo de sanidad: un split aleatorio estratificado normal (sin restricción por sujeto, es decir *permitiendo* fuga entre sujetos) sobre las mismas features del modelo A alcanzó **24.4% de accuracy** — muy por encima del azar. Esto confirma que:
+1. Los datos, etiquetas y el pipeline de features **no tienen un error de alineación** (las clases están balanceadas 545-548 c/u, sin NaN, sin fuga de índices).
+2. **Sí existe señal aprendible** en el EMG para distinguir las 7 emociones — pero es **altamente específica de cada sujeto** y no generaliza a sujetos no vistos (que es exactamente lo que LOSO está diseñado para medir).
+
+**Interpretación:** este es un hallazgo real y científicamente relevante, no un fallo de implementación: la señal EMG facial en PME4 parece capturar patrones idiosincráticos de cada persona (línea base de activación muscular, articulación del habla mezclada con la expresión emocional, colocación de electrodos) más que un patrón de "emoción" generalizable entre sujetos, al menos con estas arquitecturas y características. Esto es consistente con lo que motivó al prompt original a proponer líneas experimentales más avanzadas para EMG (Graph Transformer, transfer learning) — el resultado aquí sugiere que **normalización/adaptación por sujeto o técnicas de adaptación de dominio (p. ej. DANN) serían un siguiente paso razonable**, no una arquitectura más compleja sin más. No se reporta este resultado como fracaso del pipeline, sino como evidencia real de la dificultad del problema *subject-independent* en esta modalidad — exactamente el tipo de hallazgo que el punto 21 del prompt original pide no ocultar ni maquillar.
+
+Los embeddings de los tres modelos quedaron guardados igual que en EEG (`embeddings/emg/pme4/<modelo>/subject_XX.npz`, no versionados en git) para la futura fusión, aunque su utilidad como representación "emocional" limpia es cuestionable dado este resultado — otra razón para tratarlos con cautela en la etapa de fusión multimodal.
+
+---
+
 ## 12. Próximos pasos (esperando tu confirmación)
 
 Si apruebas este plan, la siguiente fase generará:

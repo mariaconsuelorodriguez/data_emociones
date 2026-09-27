@@ -1,0 +1,78 @@
+{
+  "metric": "accuracy",
+  "per_subject": {
+    "A_mlp_features": [
+      0.13714285714285715,
+      0.17191977077363896,
+      0.16285714285714287,
+      0.13753581661891118,
+      0.20857142857142857,
+      0.19220055710306408,
+      0.1174785100286533,
+      0.12103746397694524,
+      0.15428571428571428,
+      0.15428571428571428,
+      0.1411042944785276
+    ],
+    "B_cnn1d": [
+      0.13714285714285715,
+      0.11174785100286533,
+      0.1457142857142857,
+      0.12320916905444126,
+      0.19428571428571428,
+      0.1894150417827298,
+      0.1346704871060172,
+      0.15561959654178675,
+      0.18,
+      0.13142857142857142,
+      0.10429447852760736
+    ],
+    "C_cnn_lstm": [
+      0.15714285714285714,
+      0.11461318051575932,
+      0.13428571428571429,
+      0.11174785100286533,
+      0.20285714285714285,
+      0.181058495821727,
+      0.13753581661891118,
+      0.15561959654178675,
+      0.15142857142857144,
+      0.16857142857142857,
+      0.12576687116564417
+    ]
+  },
+  "omnibus": {
+    "test_name": "repeated-measures ANOVA (one-way approximation)",
+    "statistic": 0.2292156000212502,
+    "p_value": 0.7965368283056496,
+    "normality_p_value": 0.4391568970706695,
+    "used_parametric": true,
+    "justification": "Shapiro-Wilk per model: min p=0.4392 > 0.05: normality not rejected for any model, so ANOVA is used."
+  },
+  "pairwise": {
+    "A_mlp_features_vs_B_cnn1d": {
+      "test_name": "paired t-test",
+      "statistic": 0.9933727914458497,
+      "p_value": 0.34395656765905336,
+      "normality_p_value": 0.9250480669689745,
+      "used_parametric": true,
+      "justification": "Shapiro-Wilk on paired differences p=0.9250 > 0.05: normality not rejected, so a paired t-test is used."
+    },
+    "A_mlp_features_vs_C_cnn_lstm": {
+      "test_name": "paired t-test",
+      "statistic": 0.6555955293798886,
+      "p_value": 0.5268787392403278,
+      "normality_p_value": 0.8800300126088769,
+      "used_parametric": true,
+      "justification": "Shapiro-Wilk on paired differences p=0.8800 > 0.05: normality not rejected, so a paired t-test is used."
+    },
+    "B_cnn1d_vs_C_cnn_lstm": {
+      "test_name": "paired t-test",
+      "statistic": -0.5429070946388703,
+      "p_value": 0.5990848979027698,
+      "normality_p_value": 0.9448518544901127,
+      "used_parametric": true,
+      "justification": "Shapiro-Wilk on paired differences p=0.9449 > 0.05: normality not rejected, so a paired t-test is used."
+    }
+  }
+}
