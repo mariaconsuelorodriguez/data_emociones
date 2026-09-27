@@ -80,12 +80,40 @@ def loso_splits(trials: list[Pme4Trial], n_val_subjects: int = 1) -> Iterator[tu
 
 
 def load_raw_emg(trial: Pme4Trial, data_root: Path) -> np.ndarray:
-    """Loads the raw EMG signal for one trial. Raises FileNotFoundError with the
-    exact missing path if the referenced .npy file hasn't been uploaded yet."""
+    """Loads the raw EMG signal for one trial from a loose .npy file. Raises
+    FileNotFoundError with the exact missing path if it hasn't been extracted/uploaded."""
     path = Path(data_root) / trial.raw_emg_filepath
     if not path.exists():
         raise FileNotFoundError(
-            f"Missing PME4 raw EMG file: {path}. The manifest is in the repo but the "
-            "underlying signal files still need to be uploaded (see PLAN_EXPERIMENTAL.md, section 7)."
+            f"Missing PME4 raw EMG file: {path}. Either extract PME4/s{trial.subject:02d}.zip "
+            "first, or use load_raw_emg_from_zip() to read directly from the archive."
         )
     return np.load(path)
+
+
+def load_array_from_zip(zip_root: Path, subject: int, relative_path: str) -> np.ndarray:
+    """Loads a single .npy array straight out of PME4/sXX.zip without extracting
+    the whole (~500MB per subject) archive to disk first.
+
+    Verified against the real archives shipped in this repo: each sXX.zip
+    contains 350 trials x {raw_eeg_5kHz.npy (8ch, 25000 samples), raw_emg_5kHz.npy
+    (6ch, 25000 samples), two audio MFCC variants, processed_eeg/emg, and the
+    trial .wav}, all under "sXX/tYYY/...".
+    """
+    import io
+    import zipfile
+
+    zip_path = Path(zip_root) / f"s{subject:02d}.zip"
+    if not zip_path.exists():
+        raise FileNotFoundError(f"Missing PME4 archive: {zip_path}")
+    with zipfile.ZipFile(zip_path) as zf:
+        with zf.open(relative_path) as f:
+            return np.load(io.BytesIO(f.read()))
+
+
+def load_raw_emg_from_zip(trial: Pme4Trial, zip_root: Path) -> np.ndarray:
+    return load_array_from_zip(zip_root, trial.subject, trial.raw_emg_filepath)
+
+
+def load_raw_eeg_from_zip(trial: Pme4Trial, zip_root: Path) -> np.ndarray:
+    return load_array_from_zip(zip_root, trial.subject, trial.raw_eeg_filepath)
