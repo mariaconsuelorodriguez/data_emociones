@@ -1,0 +1,25 @@
+experiment_name: eeg_seed_transformer
+seed: 42
+
+data:
+  root: EEG/SEED
+  n_val_subjects: 1
+
+model:
+  # one of: baseline, cnn_bilstm, transformer
+  type: transformer
+  embedding_dim: 128
+  seq_len: 10     # only used by cnn_bilstm / transformer
+  seq_stride: 5   # only used by cnn_bilstm / transformer
+
+training:
+  batch_size: 128
+  epochs: 12
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  device: cpu
+
+output:
+  results_dir: results/eeg/seed
+  embeddings_dir: embeddings/eeg/seed
+  checkpoints_dir: checkpoints/eeg/seed
