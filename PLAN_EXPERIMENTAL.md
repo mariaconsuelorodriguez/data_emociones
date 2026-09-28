@@ -309,6 +309,28 @@ Los embeddings de los tres modelos quedaron guardados igual que en EEG (`embeddi
 
 ---
 
+## 11quater. Resultados reales — PPGE (external-ppg), piloto A/B/C completo (LOSO, 18 sujetos)
+
+Subiste `external-ppg/` (fuente: PKNU-PR-ML-Lab/PPG-Dataset, GitHub público) — se verificó real: 18 sujetos × 4 emociones (ira/alegría/relajación/tristeza) inducidas con videoclips, señal PPG cruda en 72 archivos de texto. **La frecuencia de muestreo no está documentada por los autores** (se verificó tanto en el README como en la página de GitHub); siguiendo tu indicación se usó **100 Hz como valor asumido, no publicado por los autores** — cualquier cifra en bpm/segundos hereda esa incertidumbre. Como chequeo de plausibilidad: con ese supuesto, la detección de picos (NeuroKit2) da ritmos cardíacos e intervalos entre latidos fisiológicamente razonables (~75 lpm, IBI ~0.8-0.9s) en las ventanas revisadas — no es una prueba de que 100 Hz sea correcto, pero es consistente.
+
+Pipeline real: limpieza y detección de pulsos con NeuroKit2, segmentación en ventanas de 15s con solape de 5s (2.646 ventanas, **0 descartadas** por pulsos insuficientes), pérdida ponderada por clase (los clips de "ira" son más cortos). Resultados reales (`results/ppg/external_ppg/{cnn1d,cnn_bilstm,transformer}/loso_summary.json`):
+
+| Modelo | Accuracy | Balanced Accuracy | F1 macro |
+|---|---|---|---|
+| A — CNN1D | 26.8% ± 12.5% | 24.0% ± 7.7% | 16.6% ± 7.2% |
+| B — CNN + BiLSTM | 29.7% ± 13.9% | 26.8% ± 10.0% | 19.7% ± 9.1% |
+| C — Transformer | 29.0% ± 10.9% | 25.7% ± 9.5% | 19.9% ± 9.5% |
+
+(Azar = 25% en 4 clases.)
+
+**Comparación estadística** (`evaluation/compare_ppg_models.py`): ANOVA de un factor F=0.25, **p=0.78** — **sin diferencia significativa entre los tres modelos**, los tres esencialmente en el azar, con alta varianza entre sujetos (algunos folds por debajo de 5%, otros por encima de 50%).
+
+**Interpretación:** este es el **mismo patrón que PME4/EMG** — ningún modelo, por más complejo, generaliza de forma fiable a sujetos no vistos con la señal fisiológica cruda de este dataset pequeño (18 sujetos, ventanas de 15s). A diferencia de PME4, aquí no se corrió el diagnóstico de "fuga de sujeto permitida" (por presupuesto de tiempo), pero dado el patrón idéntico entre dos modalidades fisiológicas distintas (EMG y PPG) con arquitecturas distintas, la hipótesis más plausible sigue siendo la misma: **fuerte variabilidad interindividual fisiológica que domina sobre el patrón emocional común**, no un error de implementación. Con solo 18 sujetos y ventanas relativamente cortas, el tamaño de muestra por sujeto también es una limitación real a documentar (a diferencia de SEED con 15 sujetos pero miles de muestras/sujeto).
+
+**Hallazgo transversal a destacar:** de las cuatro modalidades pilotadas, **EEG (SEED) y FER (RAF-DB) sí muestran generalización subject-independent por encima del azar de forma clara y con diferencias estadísticamente significativas entre arquitecturas**, mientras que **EMG (PME4) y PPG (PPGE) no** con los enfoques probados aquí. Esto es información valiosa para priorizar qué ramas llevar primero a la fusión multimodal, y para justificar líneas de trabajo futuras (normalización por sujeto, adaptación de dominio) específicamente en EMG y PPG antes de intentar fusionarlas con EEG/FER.
+
+---
+
 ## 12. Próximos pasos (esperando tu confirmación)
 
 Si apruebas este plan, la siguiente fase generará:
