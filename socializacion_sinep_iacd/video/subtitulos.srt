@@ -1,0 +1,23 @@
+1
+00:00:00,500 --> 00:00:12,700
+¿Alguna vez te has preguntado cómo tu celular reconoce tu cara, cómo una aplicación sabe qué canción recomendarte o cómo un mapa encuentra la ruta más rápida? Detrás de todo eso hay inteligencia artificial y datos.
+
+2
+00:00:13,600 --> 00:00:29,240
+Te presentamos Ingeniería en Inteligencia Artificial y Ciencia de Datos, de la Escuela de Ciencias Básicas, Tecnología e Ingeniería de la UNAD. Es un programa profesional totalmente virtual, de ciento cincuenta créditos, que te forma como ingeniero o ingeniera.
+
+3
+00:00:30,140 --> 00:00:49,220
+¿Y qué hace este profesional? Enseña a las máquinas a aprender. Diseña sistemas inteligentes que automatizan tareas, analiza grandes cantidades de datos para tomar mejores decisiones y crea soluciones con visión por computador, lenguaje natural e inteligencia artificial generativa. Y lo hace siempre con ética, seguridad y compromiso social.
+
+4
+00:00:50,120 --> 00:01:11,744
+¿Dónde puedes trabajar? Como científico o analista de datos, desarrollador de soluciones de inteligencia artificial, especialista en visualización de datos, líder de proyectos o consultor en transformación digital. Tu trabajo se necesita en salud, finanzas, comercio, logística, educación, el campo y el sector público. ¡Y también puedes crear tu propia empresa!
+
+5
+00:01:12,644 --> 00:01:32,444
+Y lo mejor es que puedes empezar desde ya. Mientras cursas los ciclos cinco y seis del SINEP, puedes matricular cursos articulados como Pensamiento Lógico Matemático, Fundamentos de Programación e Introducción a la Ingeniería. Cuando los apruebes, esos créditos se te reconocen al entrar al programa. Así ahorras tiempo y dinero.
+
+6
+00:01:33,344 --> 00:01:44,088
+Tu ruta hacia la educación superior comienza aquí. Del SINEP a la Ingeniería. Llena el formulario de interés y acompáñanos en la jornada de Tecnologías Digitales. ¡Te esperamos en la UNAD!
